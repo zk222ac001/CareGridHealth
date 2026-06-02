@@ -1,0 +1,60 @@
+generator client { provider = "prisma-client-js" }
+datasource db { provider = "postgresql" url = env("DATABASE_URL") }
+
+enum InquiryStatus { NEW IN_PROGRESS COMPLETED }
+enum Role { ADMIN STAFF }
+
+model User {
+  id        String   @id @default(cuid())
+  firstName String?
+  lastName  String?
+  email     String   @unique
+  phone     String?
+  role      Role     @default(STAFF)
+  createdAt DateTime @default(now())
+}
+
+model ContactMessage {
+  id        String        @id @default(cuid())
+  name      String
+  phone     String?
+  email     String
+  message   String
+  status    InquiryStatus @default(NEW)
+  createdAt DateTime      @default(now())
+}
+
+model AiChatSession {
+  id        String          @id @default(cuid())
+  visitorId String?
+  startedAt DateTime        @default(now())
+  endedAt   DateTime?
+  messages  AiChatMessage[]
+}
+
+model AiChatMessage {
+  id        String        @id @default(cuid())
+  sessionId String
+  session   AiChatSession @relation(fields: [sessionId], references: [id])
+  role      String
+  message   String
+  timestamp DateTime      @default(now())
+}
+
+model ServiceInquiry {
+  id               String        @id @default(cuid())
+  organizationName String?
+  contactName      String
+  email            String
+  phone            String?
+  serviceType      String
+  requirements     String
+  status           InquiryStatus @default(NEW)
+  createdAt        DateTime      @default(now())
+}
+
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
