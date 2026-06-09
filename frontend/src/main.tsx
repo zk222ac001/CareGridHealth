@@ -18,7 +18,7 @@ function Header() {
 function Home() {
   return <section id="home" className="hero section">
     <div className="heroText">
-      <span className="eyebrow">Melbourne • Digital Health Integration</span>
+      <span className="eyebrow">Digital Health Integration</span>
       <h1>Connecting the Future of Healthcare</h1>
       <p>Empowering Digital Health: CareGrid Health Pioneering Seamless Healthcare Integration</p>
       <p className="muted">We help healthcare organizations build smarter, connected, secure, and efficient digital health ecosystems across the Asia-Pacific region.</p>
