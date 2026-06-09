@@ -1,8 +1,21 @@
-generator client { provider = "prisma-client-js" }
-datasource db { provider = "postgresql" url = env("DATABASE_URL") }
+generator client {
+  provider = "prisma-client-js"
+}
 
-enum InquiryStatus { NEW IN_PROGRESS COMPLETED }
-enum Role { ADMIN STAFF }
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum InquiryStatus {
+  NEW
+  IN_PROGRESS
+  COMPLETED
+}
+enum Role {
+  ADMIN
+  STAFF
+}
 
 model User {
   id        String   @id @default(cuid())

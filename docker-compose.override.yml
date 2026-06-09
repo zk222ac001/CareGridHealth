@@ -1,0 +1,40 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: builder
+    command: npm run dev
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/caregrid_health?schema=public
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USER: ${MAIL_USER:-caregrid.health@gmail.com}
+      MAIL_PASS: ${MAIL_PASS:-}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-caregrid.health@gmail.com}
+      FRONTEND_URL: http://localhost:5173
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    ports:
+      - "4000:4000"
+    depends_on:
+      - postgres
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: builder
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "5173"]
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:4000}
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports: !override
+      - "5173:5173"
+    depends_on:
+      - backend
