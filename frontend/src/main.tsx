@@ -21,7 +21,7 @@ function Home() {
       <span className="eyebrow">Digital Health Integration</span>
       <h1>Connecting the Future of Healthcare</h1>
       <p>Empowering Digital Health: CareGrid Health Pioneering Seamless Healthcare Integration</p>
-      <p className="muted">We help healthcare organizations build smarter, connected, secure, and efficient digital health ecosystems across the Asia-Pacific region.</p>
+      <p className="muted">We help healthcare organizations build smarter, connected, secure, and efficient digital health ecosystems across the world.</p>
       <div className="actions"><a className="btn primary" href="#contact">Contact Us</a><a className="btn secondary" href="#services">Explore Services</a></div>
     </div>
     <div className="heroCard"><Shield/><h3>Secure Healthcare Integration</h3><p>Reliable workflows, compliance-aware delivery, and scalable technology foundations.</p></div>
