@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Activity, Bot, CheckCircle, Shield, Stethoscope, Menu, X } from 'lucide-react';
+import { Bot, CheckCircle, Shield, Menu, X } from 'lucide-react';
 import './styles.css';
+import logo from './assets/caregrid-logo.png';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
@@ -9,7 +10,7 @@ function Header() {
   const [open, setOpen] = useState(false);
   const links = ['Home', 'About', 'Services', 'AI Consultant', 'Contact'];
   return <header className="header">
-    <a className="brand" href="#home"><Activity /> CareGrid Health</a>
+    <a className="brand" href="#home"><img src={logo} alt="CareGrid Health" className="brandLogo" /></a>
     <button className="menu" onClick={() => setOpen(!open)}>{open ? <X/> : <Menu/>}</button>
     <nav className={open ? 'nav open' : 'nav'}>{links.map(l => <a key={l} href={`#${l.toLowerCase().replaceAll(' ', '-')}`} onClick={()=>setOpen(false)}>{l}</a>)}</nav>
   </header>
