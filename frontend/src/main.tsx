@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Bot, CheckCircle, Shield, Menu, X } from 'lucide-react';
 import './styles.css';
-import logo from './assets/caregrid-logo.png';
+import logo from './assets/logo.png';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
