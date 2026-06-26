@@ -35,7 +35,6 @@ jobs:
 
       - name: Build
         env:
-          GITHUB_PAGES: "true"
           VITE_API_URL: ${{ vars.VITE_API_URL }}
         run: npm run build
 
