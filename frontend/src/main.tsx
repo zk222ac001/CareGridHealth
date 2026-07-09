@@ -10,10 +10,7 @@ const configuredApi = import.meta.env.VITE_API_URL || '';
 const browserHost = typeof window !== 'undefined' ? window.location.hostname : '';
 const isLocalBrowser = ['localhost', '127.0.0.1', '::1'].includes(browserHost);
 const API = configuredApi || (isLocalBrowser ? LOCAL_API : '');
-const useStaticEmailEndpoint = !API || (!isLocalBrowser && API.includes('localhost'));
-const staticContactEndpoint = `https://formsubmit.co/${CONTACT_EMAIL}`;
-const contactSuccessParam = 'messageSent';
-const contactSuccessUrl = typeof window !== 'undefined' ? `${window.location.origin}${window.location.pathname}?${contactSuccessParam}=1#contact` : `https://caregridhealth.com.au/?${contactSuccessParam}=1#contact`;
+const useEmailClientFallback = !API || (!isLocalBrowser && API.includes('localhost'));
 
 function Header() {
   const [open, setOpen] = useState(false);
@@ -62,10 +59,8 @@ function Contact() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const params = new URLSearchParams(window.location.search);
-    if (params.get(contactSuccessParam) !== '1') return;
-    setStatus({ type: 'success', message: 'Your message has been sent. Thank you.' });
-    window.history.replaceState(null, '', `${window.location.pathname}#contact`);
+    if (window.location.hash !== '#contact') return;
+    setStatus({ type: '', message: '' });
   }, []);
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
@@ -83,9 +78,12 @@ function Contact() {
       return;
     }
 
-    if (useStaticEmailEndpoint) {
-      setSubmitting(true);
-      setStatus({ type: 'info', message: 'Sending your message...' });
+    if (useEmailClientFallback) {
+      e.preventDefault();
+      const subject = encodeURIComponent('New CareGrid Health Contact Message');
+      const message = encodeURIComponent(`Name: ${body.name}\nPhone: ${body.phone || ''}\n\n${body.message}`);
+      window.location.href = `mailto:${CONTACT_EMAIL}?subject=${subject}&body=${message}`;
+      setStatus({ type: 'success', message: 'Your email app has been opened with a prepared message. Please press send to complete.' });
       return;
     }
 
@@ -104,7 +102,7 @@ function Contact() {
       setSubmitting(false);
     }
   }
-  return <section id="contact" className="section split"><div><h2>Contact CareGrid Health</h2><p><b>Location:</b> Melbourne VIC, Australia</p><p><b>Phone:</b> +61 421 283 398</p><p><b>Email:</b> caregrid.health@gmail.com</p><p><b>Hours:</b> Mon–Fri, 08:00–17:00</p></div><form onSubmit={submit} noValidate className="form contactForm" action={useStaticEmailEndpoint ? staticContactEndpoint : undefined} method={useStaticEmailEndpoint ? 'POST' : undefined}>{useStaticEmailEndpoint && <><input type="hidden" name="_subject" value="New CareGrid Health Contact Message"/><input type="hidden" name="_template" value="table"/><input type="hidden" name="_captcha" value="false"/><input type="hidden" name="_next" value={contactSuccessUrl}/><input className="formHoneypot" type="text" name="_honey" tabIndex={-1} autoComplete="off"/></>}<div className="formField"><label htmlFor="contact-name"><User aria-hidden="true"/>Name</label><input id="contact-name" name="name" autoComplete="name" placeholder="Your name"/></div><div className="formField"><label htmlFor="contact-phone"><Phone aria-hidden="true"/>Phone</label><input id="contact-phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="+61 421 283 398"/></div><div className="formField"><label htmlFor="contact-message"><MessageSquare aria-hidden="true"/>Message</label><textarea id="contact-message" name="message" rows={7} placeholder="How can we help?"/></div>{status.message && <p className={`formStatus ${status.type}`} role="status" aria-live="polite">{status.message}</p>}<button className="btn primary formSubmit" type="submit" disabled={submitting}><Send aria-hidden="true"/><span>{submitting ? 'Sending...' : 'Submit'}</span></button></form></section>
+  return <section id="contact" className="section split"><div><h2>Contact CareGrid Health</h2><p><b>Location:</b> Melbourne VIC, Australia</p><p><b>Phone:</b> +61 421 283 398</p><p><b>Email:</b> caregrid.health@gmail.com</p><p><b>Hours:</b> Mon–Fri, 08:00–17:00</p></div><form onSubmit={submit} noValidate className="form contactForm"><div className="formField"><label htmlFor="contact-name"><User aria-hidden="true"/>Name</label><input id="contact-name" name="name" autoComplete="name" placeholder="Your name"/></div><div className="formField"><label htmlFor="contact-phone"><Phone aria-hidden="true"/>Phone</label><input id="contact-phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="+61 421 283 398"/></div><div className="formField"><label htmlFor="contact-message"><MessageSquare aria-hidden="true"/>Message</label><textarea id="contact-message" name="message" rows={7} placeholder="How can we help?"/></div>{status.message && <p className={`formStatus ${status.type}`} role="status" aria-live="polite">{status.message}</p>}<button className="btn primary formSubmit" type="submit" disabled={submitting}><Send aria-hidden="true"/><span>{submitting ? 'Sending...' : 'Submit'}</span></button></form></section>
 }
 
 function App(){return <><Header/><main><Home/><About/><Services/><Contact/></main><footer>© 2026 CareGrid Health. Digital health integration services in Australia, APAC and North America.</footer></>}
