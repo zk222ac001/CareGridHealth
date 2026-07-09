@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -6,10 +6,18 @@ import { z } from 'zod';
 import nodemailer from 'nodemailer';
 import OpenAI from 'openai';
 import { PrismaClient } from '@prisma/client';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const app = express();
 const prisma = new PrismaClient();
 const port = Number(process.env.PORT || 4000);
+const contactRecipientEmail = 'caregrid.health@gmail.com';
 
 app.use(helmet());
 app.use(cors({ origin: process.env.FRONTEND_URL || '*' }));
@@ -18,8 +26,8 @@ app.use(express.json({ limit: '1mb' }));
 const contactSchema = z.object({
   name: z.string().min(2),
   phone: z.string().optional(),
-  email: z.string().email(),
-  message: z.string().min(10),
+  email: z.string().email().optional(),
+  message: z.string().min(1),
 });
 
 const serviceInquirySchema = z.object({
@@ -32,29 +40,47 @@ const serviceInquirySchema = z.object({
 });
 
 async function sendNotification(subject: string, text: string) {
-  if (!process.env.MAIL_USER || !process.env.MAIL_PASS) return;
+  if (!process.env.MAIL_USER || !process.env.MAIL_PASS) return false;
+  const mailPort = Number(process.env.MAIL_PORT || 587);
   const transporter = nodemailer.createTransport({
-    host: process.env.MAIL_HOST,
-    port: Number(process.env.MAIL_PORT || 587),
-    secure: false,
+    host: process.env.MAIL_HOST || 'smtp.gmail.com',
+    port: mailPort,
+    secure: mailPort === 465,
     auth: { user: process.env.MAIL_USER, pass: process.env.MAIL_PASS },
   });
   await transporter.sendMail({
     from: process.env.MAIL_USER,
-    to: process.env.ADMIN_EMAIL || 'caregrid.health@gmail.com',
+    to: contactRecipientEmail,
     subject,
     text,
   });
+  return true;
 }
 
 app.get('/api/health', (_req, res) => res.json({ ok: true, service: 'CareGrid Health API' }));
 
 app.post('/api/contact', async (req, res) => {
   const parsed = contactSchema.safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
-  const message = await prisma.contactMessage.create({ data: parsed.data });
-  await sendNotification('New CareGrid Health Contact Message', `Name: ${parsed.data.name}\nEmail: ${parsed.data.email}\nPhone: ${parsed.data.phone || ''}\n\n${parsed.data.message}`);
-  res.status(201).json({ message });
+  if (!parsed.success) return res.status(400).json({ error: 'Please check the form and try again.', details: parsed.error.flatten() });
+
+  let sent = false;
+  try {
+    sent = await sendNotification('New CareGrid Health Contact Message', `Name: ${parsed.data.name}\nPhone: ${parsed.data.phone || ''}\n\n${parsed.data.message}`);
+  } catch (error) {
+    console.error('Contact email delivery failed.', error);
+    return res.status(502).json({ error: 'We could not send your message right now. Please email caregrid.health@gmail.com directly.' });
+  }
+
+  if (!sent) return res.status(503).json({ error: 'Email delivery is not configured.' });
+
+  let message = null;
+  try {
+    message = await prisma.contactMessage.create({ data: { ...parsed.data, email: parsed.data.email || '' } });
+  } catch (error) {
+    console.warn('Contact email sent, but database save failed.', error);
+  }
+
+  res.status(201).json({ message, sent: true });
 });
 
 app.post('/api/service-inquiries', async (req, res) => {

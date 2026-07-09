@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Bot, CheckCircle, Shield, Menu, X } from 'lucide-react';
+import { CheckCircle, Shield, Menu, X, User, Phone, MessageSquare, Send } from 'lucide-react';
 import './styles.css';
 import logo from './assets/logo.png';
 
@@ -8,11 +8,16 @@ const API = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
 function Header() {
   const [open, setOpen] = useState(false);
-  const links = ['Home', 'About', 'Services', 'AI Consultant', 'Contact'];
+  const links = [
+    { label: 'Home', href: '#home' },
+    { label: 'About Us', href: '#about' },
+    { label: 'Services', href: '#services' },
+    { label: 'Contact', href: '#contact' },
+  ];
   return <header className="header">
     <a className="brand" href="#home"><img src={logo} alt="CareGrid Health" className="brandLogo" /></a>
     <button className="menu" onClick={() => setOpen(!open)}>{open ? <X/> : <Menu/>}</button>
-    <nav className={open ? 'nav open' : 'nav'}>{links.map(l => <a key={l} href={`#${l.toLowerCase().replaceAll(' ', '-')}`} onClick={()=>setOpen(false)}>{l}</a>)}</nav>
+    <nav className={open ? 'nav open' : 'nav'}>{links.map(l => <a key={l.label} href={l.href} onClick={()=>setOpen(false)}>{l.label}</a>)}</nav>
   </header>
 }
 
@@ -30,7 +35,7 @@ function Home() {
 }
 
 function About() {
-  return <section id="about" className="section split"><div><h2>About CareGrid Health</h2><p>CareGrid Health is a leading provider of digital health solutions, specializing in integration services. We address the rising demand for seamless healthcare integration across the Asia-Pacific region.</p></div><div className="cards"><div><h3>Mission</h3><p>Enable connected healthcare ecosystems through practical digital health integration.</p></div><div><h3>Vision</h3><p>Become a trusted APAC partner for secure, scalable healthcare interoperability.</p></div></div></section>
+  return <section id="about" className="section split"><div><h2>About CareGrid Health</h2><p>CareGrid Health is a leading provider of digital health solutions, specializing in integration services. We address the rising demand for seamless healthcare integration across the Asia-Pacific region.</p><p>Our experienced team has 42+ years of combined experience in successfully delivering digital health and integration services in Australia, New Zealand, the Middle East, Europe, and the United States of America.</p></div><div className="cards"><div><h3>Mission</h3><p>Enable connected healthcare ecosystems through practical digital health integration.</p></div><div><h3>Vision</h3><p>Become a trusted APAC partner for secure, scalable healthcare interoperability.</p></div></div></section>
 }
 
 function Services() {
@@ -42,33 +47,40 @@ function Services() {
   return <section id="services" className="section"><h2>Services</h2><div className="serviceGrid">{items.map(([t,d])=><article className="service" key={t}><CheckCircle/><h3>{t}</h3><p>{d}</p></article>)}</div></section>
 }
 
-function AIConsultant() {
-  const [messages, setMessages] = useState([{role:'assistant', content:'Hello, I am the CareGrid Health AI Consultant. I can help with digital health integration questions, service discovery, and project scoping. I do not provide medical diagnosis or emergency advice.'}]);
-  const [input, setInput] = useState('');
-  async function send() {
-    if (!input.trim()) return;
-    const userMsg = {role:'user', content: input};
-    setMessages(m => [...m, userMsg]);
-    setInput('');
-    const res = await fetch(`${API}/api/ai/chat`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({message: userMsg.content})});
-    const data = await res.json();
-    setMessages(m => [...m, {role:'assistant', content: data.reply}]);
-  }
-  return <section id="ai-consultant" className="section"><h2><Bot/> AI Health Integration Consultant</h2><div className="chat">{messages.map((m,i)=><div key={i} className={`msg ${m.role}`}>{m.content}</div>)}<div className="chatInput"><input value={input} onChange={e=>setInput(e.target.value)} placeholder="Ask about integration, implementation, or health checks..." onKeyDown={e=>e.key==='Enter'&&send()}/><button onClick={send}>Send</button></div></div><p className="small">Disclaimer: This assistant provides general digital health technology information only. It does not provide medical advice, diagnosis, treatment, or emergency support.</p></section>
-}
-
 function Contact() {
-  const [status, setStatus] = useState('');
+  const [status, setStatus] = useState({ type: '', message: '' });
+  const [submitting, setSubmitting] = useState(false);
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const form = new FormData(e.currentTarget);
-    const body = Object.fromEntries(form.entries());
-    const res = await fetch(`${API}/api/contact`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
-    setStatus(res.ok ? 'Thank you. Your message has been submitted.' : 'Submission failed. Please try again.');
-    if (res.ok) e.currentTarget.reset();
+    const formElement = e.currentTarget;
+    const form = new FormData(formElement);
+    const body = {
+      name: String(form.get('name') || '').trim(),
+      phone: String(form.get('phone') || '').trim(),
+      message: String(form.get('message') || '').trim(),
+    };
+
+    if (!body.name || !body.message) {
+      setStatus({ type: 'error', message: 'Please enter your name and message.' });
+      return;
+    }
+
+    setSubmitting(true);
+    setStatus({ type: 'info', message: 'Sending your message...' });
+    try {
+      const res = await fetch(`${API}/api/contact`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.error || 'Submission failed. Please try again.');
+      setStatus({ type: 'success', message: 'Your message has been sent. Thank you.' });
+      formElement.reset();
+    } catch (error) {
+      setStatus({ type: 'error', message: error instanceof Error ? error.message : 'Submission failed. Please try again.' });
+    } finally {
+      setSubmitting(false);
+    }
   }
-  return <section id="contact" className="section split"><div><h2>Contact CareGrid Health</h2><p><b>Location:</b> Melbourne VIC, Australia</p><p><b>Phone:</b> +61 421 283 398</p><p><b>Email:</b> caregrid.health@gmail.com</p><p><b>Hours:</b> Mon–Fri, 08:00–17:00</p></div><form onSubmit={submit} className="form"><input name="name" placeholder="Name" required/><input name="phone" placeholder="Phone"/><input name="email" type="email" placeholder="Email" required/><textarea name="message" placeholder="Message" required/><button className="btn primary">Submit</button><p>{status}</p></form></section>
+  return <section id="contact" className="section split"><div><h2>Contact CareGrid Health</h2><p><b>Location:</b> Melbourne VIC, Australia</p><p><b>Phone:</b> +61 421 283 398</p><p><b>Email:</b> caregrid.health@gmail.com</p><p><b>Hours:</b> Mon–Fri, 08:00–17:00</p></div><form onSubmit={submit} noValidate className="form contactForm"><div className="formField"><label htmlFor="contact-name"><User aria-hidden="true"/>Name</label><input id="contact-name" name="name" autoComplete="name" placeholder="Your name"/></div><div className="formField"><label htmlFor="contact-phone"><Phone aria-hidden="true"/>Phone</label><input id="contact-phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="+61 421 283 398"/></div><div className="formField"><label htmlFor="contact-message"><MessageSquare aria-hidden="true"/>Message</label><textarea id="contact-message" name="message" rows={7} placeholder="How can we help?"/></div>{status.message && <p className={`formStatus ${status.type}`} role="status" aria-live="polite">{status.message}</p>}<button className="btn primary formSubmit" type="submit" disabled={submitting}><Send aria-hidden="true"/><span>{submitting ? 'Sending...' : 'Submit'}</span></button></form></section>
 }
 
-function App(){return <><Header/><main><Home/><About/><Services/><AIConsultant/><Contact/></main><footer>© 2026 CareGrid Health. Digital health integration services in Melbourne and APAC.</footer></>}
+function App(){return <><Header/><main><Home/><About/><Services/><Contact/></main><footer>© 2026 CareGrid Health. Digital health integration services in Australia, APAC and North America.</footer></>}
 createRoot(document.getElementById('root')!).render(<App/>);
