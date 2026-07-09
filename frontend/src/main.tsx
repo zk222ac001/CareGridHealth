@@ -4,7 +4,13 @@ import { CheckCircle, Shield, Menu, X, User, Phone, MessageSquare, Send } from '
 import './styles.css';
 import logo from './assets/logo.png';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+const CONTACT_EMAIL = 'caregrid.health@gmail.com';
+const LOCAL_API = 'http://localhost:4000';
+const configuredApi = import.meta.env.VITE_API_URL || '';
+const browserHost = typeof window !== 'undefined' ? window.location.hostname : '';
+const isLocalBrowser = ['localhost', '127.0.0.1', '::1'].includes(browserHost);
+const API = configuredApi || (isLocalBrowser ? LOCAL_API : '');
+const useStaticEmailEndpoint = !API || (!isLocalBrowser && API.includes('localhost'));
 
 function Header() {
   const [open, setOpen] = useState(false);
@@ -68,7 +74,14 @@ function Contact() {
     setSubmitting(true);
     setStatus({ type: 'info', message: 'Sending your message...' });
     try {
-      const res = await fetch(`${API}/api/contact`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+      const endpoint = useStaticEmailEndpoint ? `https://formsubmit.co/ajax/${CONTACT_EMAIL}` : `${API}/api/contact`;
+      const payload = useStaticEmailEndpoint ? {
+        ...body,
+        _subject: 'New CareGrid Health Contact Message',
+        _template: 'table',
+        _captcha: 'false',
+      } : body;
+      const res = await fetch(endpoint, {method:'POST', headers:{'Content-Type':'application/json', 'Accept':'application/json'}, body:JSON.stringify(payload)});
       const data = await res.json().catch(() => null);
       if (!res.ok) throw new Error(data?.error || 'Submission failed. Please try again.');
       setStatus({ type: 'success', message: 'Your message has been sent. Thank you.' });
