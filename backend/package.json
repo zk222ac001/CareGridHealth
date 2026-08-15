@@ -16,6 +16,7 @@
     "dotenv": "latest",
     "express": "latest",
     "helmet": "latest",
+    "multer": "^2.2.0",
     "nodemailer": "latest",
     "openai": "latest",
     "zod": "latest"
@@ -23,6 +24,7 @@
   "devDependencies": {
     "@types/cors": "latest",
     "@types/express": "latest",
+    "@types/multer": "^2.2.0",
     "@types/node": "latest",
     "@types/nodemailer": "latest",
     "prisma": "^5.17.0",

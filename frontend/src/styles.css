@@ -1,4 +1,965 @@
-:root{--status-info-bg:#eff6ff;--status-info-text:#1d4ed8;--status-info-border:#bfdbfe;--status-success-bg:#ecfdf5;--status-success-text:#047857;--status-success-border:#a7f3d0;--status-error-bg:#fef2f2;--status-error-text:#b91c1c;--status-error-border:#fecaca}.formStatus{margin:0;padding:12px 14px;border-radius:12px;font-weight:700;line-height:1.4}.formStatus.info{background:var(--status-info-bg);color:var(--status-info-text);border:1px solid var(--status-info-border)}.formStatus.success{background:var(--status-success-bg);color:var(--status-success-text);border:1px solid var(--status-success-border)}.formStatus.error{background:var(--status-error-bg);color:var(--status-error-text);border:1px solid var(--status-error-border)}.btn:disabled{opacity:.7;cursor:not-allowed}
-.contactForm{gap:18px;padding:34px;border-radius:18px}.formField{display:grid;gap:8px}.formField label{display:flex;align-items:center;gap:8px;color:#334155;font-size:14px;font-weight:800}.formField label svg{width:17px;height:17px;color:#0f766e}.contactForm input,.contactForm textarea{box-sizing:border-box;background:#f8fafc;border-color:#cbd5e1;border-radius:10px;color:#0f172a;transition:border-color .18s,box-shadow .18s,background .18s}.contactForm input{min-height:54px}.contactForm textarea{min-height:180px;resize:vertical}.contactForm input::placeholder,.contactForm textarea::placeholder{color:#94a3b8}.contactForm input:focus,.contactForm textarea:focus{outline:0;background:white;border-color:#0f766e;box-shadow:0 0 0 4px rgba(15,118,110,.12)}.formSubmit{display:flex;align-items:center;justify-content:center;gap:10px;min-height:56px;border-radius:10px;font-size:16px}.formSubmit svg{width:18px;height:18px}
-:root{font-family:Inter,system-ui,Arial,sans-serif;color:#0f172a;background:#f8fafc;scroll-behavior:smooth}body{margin:0}a{text-decoration:none;color:inherit}.header{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:10px 7%;background:rgba(255,255,255,.88);backdrop-filter:blur(12px);border-bottom:1px solid #e2e8f0}.brand{display:flex;align-items:center;gap:10px;font-weight:800;color:#0f766e;max-width:180px;overflow:hidden}.brand svg{width:28px}.brandLogo{display:block;width:auto;height:40px;max-width:180px;object-fit:contain}.nav{display:flex;gap:24px}.nav a{font-weight:600;color:#334155}.nav a:hover{color:#0f766e}.menu{display:none;background:none;border:0}.section{padding:90px 7%}.hero{display:grid;grid-template-columns:1.3fr .7fr;gap:48px;align-items:center;min-height:70vh;background:linear-gradient(135deg,#ecfeff,#fff,#eff6ff)}.eyebrow{display:inline-block;padding:8px 12px;border-radius:999px;background:#ccfbf1;color:#0f766e;font-weight:700}.hero h1{font-size:clamp(42px,7vw,76px);line-height:1;margin:24px 0 12px}.hero p{font-size:20px;max-width:760px}.muted{color:#475569}.actions{display:flex;gap:16px;flex-wrap:wrap;margin-top:30px}.btn{border-radius:12px;padding:14px 20px;font-weight:800;border:0;cursor:pointer}.primary{background:#0f766e;color:white}.secondary{background:white;color:#0f766e;border:1px solid #99f6e4}.heroCard,.service,.cards>div,.chat,.form{background:white;border:1px solid #e2e8f0;border-radius:24px;padding:28px;box-shadow:0 18px 45px rgba(15,23,42,.08)}.heroCard svg,.service svg{width:48px;height:48px;color:#0f766e}h2{font-size:clamp(30px,4vw,48px);margin:0 0 24px;display:flex;align-items:center;gap:12px}h3{font-size:24px}.split{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start}.cards{display:grid;gap:18px}.serviceGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}.service p,.split p{color:#475569;line-height:1.7}.chat{max-width:900px}.msg{padding:14px 16px;border-radius:16px;margin:10px 0;line-height:1.5}.msg.assistant{background:#f1f5f9}.msg.user{background:#ccfbf1;margin-left:auto;max-width:75%}.chatInput{display:flex;gap:10px;margin-top:20px}.chatInput input,.form input,.form textarea{width:100%;padding:14px;border:1px solid #cbd5e1;border-radius:12px;font:inherit}.chatInput button{padding:0 20px;border:0;border-radius:12px;background:#0f766e;color:white;font-weight:800}.small{font-size:14px;color:#64748b}.form{display:grid;gap:14px}.form textarea{min-height:140px}footer{text-align:center;padding:30px;background:#0f172a;color:white}@media(max-width:850px){.hero,.split,.serviceGrid{grid-template-columns:1fr}.brand{max-width:150px}.brandLogo{height:36px;max-width:150px}.menu{display:block}.nav{display:none;position:absolute;top:58px;left:0;right:0;flex-direction:column;background:white;padding:20px 7%;border-bottom:1px solid #e2e8f0}.nav.open{display:flex}}
-.form.contactForm{gap:18px;padding:34px;border-radius:18px}.form.contactForm input,.form.contactForm textarea{box-sizing:border-box;background:#f8fafc;border-color:#cbd5e1;border-radius:10px;color:#0f172a;transition:border-color .18s,box-shadow .18s,background .18s}.form.contactForm input{min-height:54px}.form.contactForm textarea{min-height:180px;resize:vertical}.form.contactForm input:focus,.form.contactForm textarea:focus{outline:0;background:white;border-color:#0f766e;box-shadow:0 0 0 4px rgba(15,118,110,.12)}
+:root {
+  --ink: #0b1220;
+  --text: #263647;
+  --muted: #64748b;
+  --line: #d9e2ea;
+  --soft-line: #e8eef3;
+  --panel: #ffffff;
+  --canvas: #f6f9fb;
+  --band: #edf5f5;
+  --teal: #0f766e;
+  --teal-strong: #0b5f59;
+  --teal-soft: #d9f4f0;
+  --blue: #1d4ed8;
+  --gold: #c78a14;
+  --danger: #b91c1c;
+  --shadow: 0 18px 45px rgba(15, 23, 42, .08);
+  --shadow-soft: 0 10px 28px rgba(15, 23, 42, .06);
+  --radius: 8px;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  color: var(--ink);
+  background: var(--canvas);
+  scroll-behavior: smooth;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--canvas);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 12px 7%;
+  background: rgba(255, 255, 255, .94);
+  border-bottom: 1px solid var(--soft-line);
+  backdrop-filter: blur(16px);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  max-width: 192px;
+}
+
+.brandLogo {
+  display: block;
+  width: auto;
+  height: 42px;
+  max-width: 192px;
+  object-fit: contain;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.nav a {
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  color: #334155;
+  font-size: 14px;
+  font-weight: 750;
+  transition: background .18s ease, color .18s ease;
+}
+
+.nav a:hover {
+  background: var(--teal-soft);
+  color: var(--teal-strong);
+}
+
+.menu {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: white;
+  color: var(--ink);
+}
+
+.menu svg {
+  width: 22px;
+  height: 22px;
+}
+
+.section {
+  padding: 86px 7%;
+}
+
+.sectionHeader {
+  max-width: 840px;
+  margin-bottom: 30px;
+}
+
+.sectionKicker,
+.eyebrow,
+.adminEyebrow {
+  display: inline-flex;
+  align-items: center;
+  width: max-content;
+  padding: 7px 11px;
+  border: 1px solid #b7e7df;
+  border-radius: 999px;
+  background: #ecfbf8;
+  color: var(--teal-strong);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+h3,
+p {
+  overflow-wrap: anywhere;
+}
+
+h1 {
+  max-width: 860px;
+  margin: 20px 0 14px;
+  font-size: clamp(44px, 6vw, 78px);
+  line-height: .98;
+  letter-spacing: 0;
+}
+
+h2 {
+  margin: 10px 0 14px;
+  font-size: clamp(32px, 4vw, 52px);
+  line-height: 1.06;
+  letter-spacing: 0;
+}
+
+h3 {
+  margin: 0 0 10px;
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.sectionHeader p,
+.muted,
+.split p,
+.service p,
+.trainingPanel p,
+.documentCard p,
+.adminDocument p,
+.contactItem,
+.mapBlock p {
+  color: var(--text);
+  line-height: 1.72;
+}
+
+.muted {
+  max-width: 760px;
+}
+
+.hero {
+  min-height: calc(100vh - 67px);
+  display: flex;
+  align-items: center;
+  background:
+    linear-gradient(90deg, rgba(15, 118, 110, .08) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(15, 118, 110, .06) 1px, transparent 1px),
+    #f7fbfb;
+  background-size: 64px 64px;
+}
+
+.heroInner {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(340px, .72fr);
+  gap: 48px;
+  align-items: center;
+}
+
+.heroSlogan {
+  max-width: 860px;
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(20px, 2.1vw, 28px);
+  font-weight: 760;
+  line-height: 1.35;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 28px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 46px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  padding: 12px 18px;
+  font-weight: 850;
+  cursor: pointer;
+  transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: .65;
+  transform: none;
+}
+
+.primary {
+  background: var(--teal);
+  color: white;
+  box-shadow: 0 12px 24px rgba(15, 118, 110, .22);
+}
+
+.primary:hover {
+  background: var(--teal-strong);
+}
+
+.secondary {
+  border-color: #a8ddd6;
+  background: white;
+  color: var(--teal-strong);
+}
+
+.heroStats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  max-width: 720px;
+  margin-top: 30px;
+}
+
+.heroStats div {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, .82);
+  box-shadow: var(--shadow-soft);
+}
+
+.heroStats strong,
+.adminStats strong {
+  display: block;
+  color: var(--ink);
+  font-size: 28px;
+  line-height: 1;
+}
+
+.heroStats span,
+.adminStats span {
+  display: block;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.heroVisual {
+  display: grid;
+  gap: 22px;
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, .9);
+  box-shadow: var(--shadow);
+}
+
+.heroVisual img {
+  width: min(100%, 420px);
+  height: auto;
+  object-fit: contain;
+}
+
+.integrationRows {
+  display: grid;
+  gap: 10px;
+}
+
+.integrationRows div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 13px 14px;
+  border: 1px solid var(--soft-line);
+  border-radius: var(--radius);
+  background: #f8fafc;
+  color: #334155;
+  font-weight: 800;
+}
+
+.integrationRows svg,
+.heroCard svg,
+.service svg,
+.trainingPanel svg,
+.documentCard > svg,
+.adminDocument > svg,
+.contactItem svg,
+.formField label svg,
+.panelHeader > svg,
+.adminSidePanel svg,
+.emptyDocuments svg {
+  color: var(--teal);
+}
+
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, .86fr);
+  gap: 42px;
+  align-items: start;
+}
+
+.cards {
+  display: grid;
+  gap: 16px;
+}
+
+.cards > div,
+.service,
+.trainingPanel,
+.documentCard,
+.form,
+.adminPanel,
+.adminSidePanel,
+.adminHero,
+.adminStats div,
+.adminSession,
+.adminDocument,
+.emptyDocuments {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  box-shadow: var(--shadow-soft);
+}
+
+.cards > div {
+  padding: 24px;
+}
+
+.serviceGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.service {
+  display: grid;
+  gap: 14px;
+  padding: 26px;
+}
+
+.service svg {
+  width: 38px;
+  height: 38px;
+}
+
+.trainingSection,
+.experienceSection {
+  background: #ffffff;
+}
+
+.trainingPanel {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  max-width: 980px;
+  padding: 26px;
+}
+
+.trainingPanel svg {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+}
+
+.documentList,
+.adminDocumentList {
+  display: grid;
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.documentCard,
+.adminDocument {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: start;
+  padding: 18px;
+}
+
+.documentCard > svg,
+.adminDocument > svg {
+  width: 28px;
+  height: 28px;
+}
+
+.documentCard h3,
+.adminDocument h3 {
+  font-size: 19px;
+}
+
+.documentCard span,
+.adminDocument span {
+  display: block;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.sectionIntro {
+  max-width: 860px;
+}
+
+.experienceGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 30px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.experienceGrid li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 56px;
+  padding: 14px 16px;
+  border: 1px solid var(--soft-line);
+  border-radius: var(--radius);
+  background: #f8fafc;
+  color: #334155;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.experienceGrid svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: var(--gold);
+}
+
+.contactSection {
+  background: var(--band);
+}
+
+.contactDetails {
+  display: grid;
+  gap: 24px;
+}
+
+.contactList {
+  display: grid;
+  gap: 12px;
+}
+
+.contactItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #334155;
+  font-size: 18px;
+}
+
+.contactItem svg {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+}
+
+.contactItem:hover {
+  color: var(--teal-strong);
+}
+
+.mapBlock {
+  display: grid;
+  gap: 14px;
+}
+
+.mapBlock h3 {
+  margin-top: 8px;
+  font-size: 30px;
+}
+
+.mapFrame {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #dbe7e7;
+  aspect-ratio: 16 / 10;
+  box-shadow: var(--shadow-soft);
+}
+
+.mapFrame iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.form {
+  display: grid;
+  gap: 16px;
+  padding: 28px;
+}
+
+.contactForm {
+  gap: 18px;
+}
+
+.formField {
+  display: grid;
+  gap: 8px;
+}
+
+.formField label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #334155;
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.formField label svg {
+  width: 17px;
+  height: 17px;
+}
+
+.form input,
+.form textarea,
+.editDocumentForm input,
+.editDocumentForm textarea {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius);
+  background: #f8fafc;
+  color: var(--ink);
+  padding: 14px;
+  transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+
+.form input {
+  min-height: 52px;
+}
+
+.form textarea,
+.editDocumentForm textarea {
+  min-height: 140px;
+  resize: vertical;
+}
+
+.form input::placeholder,
+.form textarea::placeholder {
+  color: #94a3b8;
+}
+
+.form input:focus,
+.form textarea:focus,
+.editDocumentForm input:focus,
+.editDocumentForm textarea:focus {
+  outline: 0;
+  background: white;
+  border-color: var(--teal);
+  box-shadow: 0 0 0 4px rgba(15, 118, 110, .12);
+}
+
+.formSubmit {
+  display: flex;
+  min-height: 54px;
+  font-size: 16px;
+}
+
+.formSubmit svg,
+.compactButton svg {
+  width: 18px;
+  height: 18px;
+}
+
+.formStatus {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.formStatus.info {
+  background: #eff6ff;
+  color: var(--blue);
+  border: 1px solid #bfdbfe;
+}
+
+.formStatus.success {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.formStatus.error {
+  background: #fef2f2;
+  color: var(--danger);
+  border: 1px solid #fecaca;
+}
+
+.iconAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius);
+  background: white;
+  color: var(--teal-strong);
+  cursor: pointer;
+  transition: background .18s ease, border-color .18s ease, transform .18s ease;
+}
+
+.iconAction:hover {
+  background: #ecfeff;
+  border-color: #99f6e4;
+  transform: translateY(-1px);
+}
+
+.iconAction svg {
+  width: 18px;
+  height: 18px;
+}
+
+.iconAction.danger {
+  color: var(--danger);
+}
+
+.iconAction.danger:hover {
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.adminSection {
+  background: #eef6f6;
+}
+
+.adminShell {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: grid;
+  gap: 24px;
+}
+
+.adminHero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 32px;
+}
+
+.adminHero h2 {
+  display: block;
+  margin: 8px 0 10px;
+}
+
+.adminHero p,
+.adminSidePanel p,
+.panelHeader p,
+.adminToolbar p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.adminSession {
+  display: grid;
+  gap: 4px;
+  min-width: 190px;
+  padding: 18px;
+  box-shadow: none;
+}
+
+.adminSession span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.adminSession strong {
+  font-size: 18px;
+}
+
+.compactButton {
+  min-height: 42px;
+  margin-top: 8px;
+  padding: 10px 14px;
+}
+
+.adminStatus {
+  max-width: 1180px;
+}
+
+.adminLoginLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 520px) minmax(280px, 1fr);
+  gap: 24px;
+}
+
+.adminPanel,
+.adminSidePanel {
+  padding: 28px;
+}
+
+.adminSidePanel {
+  display: grid;
+  align-content: center;
+  gap: 12px;
+}
+
+.adminSidePanel svg {
+  width: 44px;
+  height: 44px;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--soft-line);
+}
+
+.panelHeader > svg {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+}
+
+.adminWorkspace {
+  display: grid;
+  gap: 24px;
+}
+
+.adminStats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.adminStats div {
+  padding: 20px;
+}
+
+.adminContentGrid {
+  display: grid;
+  grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.uploadForm {
+  max-width: none;
+}
+
+.documentManager {
+  min-width: 0;
+}
+
+.adminToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--soft-line);
+}
+
+.documentActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.editDocumentForm {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 12px;
+}
+
+.emptyDocuments {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 42px 20px;
+  border-style: dashed;
+  background: #f8fafc;
+  color: var(--muted);
+  text-align: center;
+}
+
+.emptyDocuments svg {
+  width: 34px;
+  height: 34px;
+}
+
+.emptyDocuments p {
+  margin: 0;
+  font-weight: 850;
+}
+
+.adminPanel input[type=file]::file-selector-button {
+  margin-right: 12px;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--teal);
+  color: white;
+  padding: 10px 12px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.small {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+footer {
+  padding: 28px 7%;
+  background: var(--ink);
+  color: white;
+  text-align: center;
+}
+
+@media (max-width: 1100px) {
+  .heroInner,
+  .split,
+  .adminLoginLayout,
+  .adminContentGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero {
+    min-height: auto;
+  }
+
+  .heroVisual {
+    max-width: 680px;
+  }
+
+  .serviceGrid,
+  .experienceGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 850px) {
+  .header {
+    padding: 10px 5%;
+  }
+
+  .brand {
+    max-width: 150px;
+  }
+
+  .brandLogo {
+    height: 36px;
+    max-width: 150px;
+  }
+
+  .menu {
+    display: inline-flex;
+  }
+
+  .nav {
+    display: none;
+    position: absolute;
+    top: 57px;
+    left: 0;
+    right: 0;
+    padding: 14px 5%;
+    border-bottom: 1px solid var(--soft-line);
+    background: white;
+    box-shadow: var(--shadow-soft);
+  }
+
+  .nav.open {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .nav a {
+    padding: 12px 10px;
+  }
+
+  .section {
+    padding: 64px 5%;
+  }
+
+  .heroStats,
+  .serviceGrid,
+  .experienceGrid,
+  .adminStats {
+    grid-template-columns: 1fr;
+  }
+
+  .heroVisual,
+  .trainingPanel,
+  .documentCard,
+  .adminDocument,
+  .adminHero {
+    display: grid;
+  }
+
+  .adminHero,
+  .adminPanel,
+  .adminSidePanel,
+  .form {
+    padding: 22px;
+  }
+
+  .documentCard,
+  .adminDocument {
+    grid-template-columns: 1fr;
+  }
+
+  .documentActions {
+    justify-content: flex-start;
+  }
+}
