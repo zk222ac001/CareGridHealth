@@ -23,6 +23,10 @@ const contactRecipientEmail = 'caregrid.health@gmail.com';
 const adminUsername = process.env.ADMIN_USERNAME || process.env.ADMIN_EMAIL || 'admin';
 const adminPassword = process.env.ADMIN_PASSWORD || '';
 const adminTokenSecret = process.env.ADMIN_SESSION_SECRET || adminPassword;
+const ollamaHost = (process.env.OLLAMA_HOST || process.env.OLLAMA_BASE_URL || '').replace(/\/$/, '');
+const ollamaModel = process.env.OLLAMA_MODEL || 'gemma4';
+const configuredOllamaTimeoutMs = Number(process.env.OLLAMA_TIMEOUT_MS || 60000);
+const ollamaTimeoutMs = Number.isFinite(configuredOllamaTimeoutMs) && configuredOllamaTimeoutMs > 0 ? configuredOllamaTimeoutMs : 60000;
 
 type TrainingDocument = {
   id: string;
@@ -342,8 +346,19 @@ app.post('/api/ai/chat', async (req, res) => {
   const system = `You are CareGrid Health's AI Digital Health Integration Consultant. CareGrid Health is based in Melbourne VIC, Australia and provides consulting services, implementation services, and health checks for digital health integration across APAC. You may discuss healthcare interoperability, HL7, FHIR, integration architecture, system implementation, health checks, compliance-aware workflows, and project scoping. Never provide medical diagnosis, treatment, prescribing, or emergency advice. Encourage users to contact CareGrid Health at caregrid.health@gmail.com or +61 421 283 398 for tailored consultation. Ask useful qualification questions such as organization type, systems involved, integration challenge, timeline, and preferred contact method.`;
 
   let reply = 'Thank you for your question. CareGrid Health can help with digital health integration strategy, implementation, and system health checks. For a tailored recommendation, please share your organization type, current systems, integration challenge, timeline, and preferred contact method.';
+  let provider = 'guided-fallback';
+  let model = '';
 
-  if (process.env.OPENAI_API_KEY) {
+  if (ollamaHost) {
+    try {
+      reply = await getOllamaReply(system, message);
+      provider = 'ollama';
+      model = ollamaModel;
+    } catch (error) {
+      console.error('Ollama chat failed.', error);
+      return res.status(503).json({ error: 'AI Consultant is not reachable right now. Please check the Ollama host and model configuration.' });
+    }
+  } else if (process.env.OPENAI_API_KEY) {
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -351,6 +366,8 @@ app.post('/api/ai/chat', async (req, res) => {
       temperature: 0.4,
     });
     reply = completion.choices[0]?.message?.content || reply;
+    provider = 'openai';
+    model = 'gpt-4o-mini';
   }
 
   const session = await prisma.aiChatSession.create({ data: { visitorId: req.ip } });
@@ -361,8 +378,40 @@ app.post('/api/ai/chat', async (req, res) => {
     ],
   });
 
-  res.json({ reply, sessionId: session.id });
+  res.json({ reply, sessionId: session.id, provider, model });
 });
+
+async function getOllamaReply(system: string, message: string) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), ollamaTimeoutMs);
+  try {
+    const response = await fetch(`${ollamaHost}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({
+        model: ollamaModel,
+        messages: [
+          { role: 'system', content: system },
+          { role: 'user', content: message },
+        ],
+        stream: false,
+        think: false,
+        options: {
+          temperature: 0.4,
+          top_p: 0.9,
+        },
+      }),
+      signal: controller.signal,
+    });
+    const data = await response.json().catch(() => null) as { message?: { content?: string }, error?: string } | null;
+    if (!response.ok) throw new Error(data?.error || `Ollama returned ${response.status}`);
+    const content = data?.message?.content?.trim();
+    if (!content) throw new Error('Ollama returned an empty response.');
+    return content;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
 app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error(err);

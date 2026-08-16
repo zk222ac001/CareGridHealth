@@ -7,7 +7,7 @@ Professional healthcare technology website for CareGrid Health.
 - Tailwind CSS
 - Node.js + Express
 - PostgreSQL + Prisma
-- OpenAI-ready AI consultant endpoint
+- Ollama-ready AI consultant endpoint with OpenAI fallback
 
 ## Quick Start
 
@@ -27,3 +27,5 @@ npx prisma generate
 
 ## Environment Variables
 See `backend/.env.example`.
+
+For the AI Consultant, set `OLLAMA_HOST` to your Ollama API host, such as `http://localhost:11434`, and `OLLAMA_MODEL` to the installed model name. The default model is `gemma4`.

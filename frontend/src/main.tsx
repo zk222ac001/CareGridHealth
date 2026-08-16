@@ -23,6 +23,9 @@ import {
   LogIn,
   LogOut,
   Download,
+  Bot,
+  Cpu,
+  Sparkles,
 } from 'lucide-react';
 import './styles.css';
 import logo from './assets/logo.png';
@@ -58,6 +61,13 @@ type TrainingDocument = {
   url: string;
 };
 
+type AiChatMessage = {
+  id: string;
+  role: 'assistant' | 'user';
+  content: string;
+  meta?: string;
+};
+
 function openPreparedContactEmail(body: ContactFormBody) {
   const subject = encodeURIComponent('New CareGrid Health Contact Message');
   const message = encodeURIComponent(`Name: ${body.name}\nPhone: ${body.phone || ''}\nEmail: ${body.email || ''}\n\n${body.message}`);
@@ -75,12 +85,17 @@ function formatFileSize(size: number) {
   return `${(size / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+function chatId() {
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 function Header() {
   const [open, setOpen] = useState(false);
   const links = [
     { label: 'Home', href: '#home' },
     { label: 'About Us', href: '#about' },
     { label: 'Services', href: '#services' },
+    { label: 'AI Consultant', href: '#ai-consultant' },
     { label: 'Training', href: '#training' },
     { label: 'Experience', href: '#experience' },
     { label: 'Contact', href: '#contact' },
@@ -188,6 +203,122 @@ function Services() {
             <p>{description}</p>
           </article>
         ))}
+      </div>
+    </section>
+  );
+}
+
+function AiConsultant() {
+  const [messages, setMessages] = useState<AiChatMessage[]>([
+    {
+      id: 'welcome',
+      role: 'assistant',
+      content: "Hello, I'm CareGrid Health's AI Digital Health Integration Consultant. Ask me about interoperability planning, HL7/FHIR workflows, implementation readiness, or integration health checks.",
+      meta: 'CareGrid Health',
+    },
+  ]);
+  const [input, setInput] = useState('');
+  const [status, setStatus] = useState({ type: '', message: '' });
+  const [loading, setLoading] = useState(false);
+
+  const prompts = [
+    'How should we prepare for an HL7/FHIR integration project?',
+    'What should be included in an integration health check?',
+    'Help us plan a low-risk EMR implementation transition.',
+  ];
+
+  async function submit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const question = input.trim();
+    if (!question) {
+      setStatus({ type: 'error', message: 'Please enter a question.' });
+      return;
+    }
+    if (!API) {
+      setStatus({ type: 'error', message: 'Backend API is not configured yet. Connect the backend to enable AI Consultant.' });
+      return;
+    }
+
+    const userMessage: AiChatMessage = { id: chatId(), role: 'user', content: question };
+    setMessages((current) => [...current, userMessage]);
+    setInput('');
+    setLoading(true);
+    setStatus({ type: 'info', message: 'Preparing response...' });
+
+    try {
+      const res = await fetch(`${API}/api/ai/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ message: question }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.error || 'AI Consultant is not available right now.');
+      const meta = data?.provider === 'ollama' && data?.model ? `Ollama ${data.model}` : data?.provider || 'AI Consultant';
+      setMessages((current) => [...current, { id: chatId(), role: 'assistant', content: data.reply, meta }]);
+      setStatus({ type: 'success', message: 'Response ready.' });
+    } catch (error) {
+      setMessages((current) => [...current, {
+        id: chatId(),
+        role: 'assistant',
+        content: 'I cannot reach the AI service right now. Please check that the backend is running and that Ollama is configured on the backend host.',
+        meta: 'Service status',
+      }]);
+      setStatus({ type: 'error', message: error instanceof Error ? error.message : 'AI request failed.' });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <section id="ai-consultant" className="section aiSection">
+      <div className="sectionHeader">
+        <span className="sectionKicker">Digital advisory</span>
+        <h2>AI Consultant</h2>
+        <p>Focused guidance for healthcare interoperability, integration delivery, implementation planning, and system health checks.</p>
+      </div>
+
+      <div className="aiWorkspace">
+        <aside className="aiContext">
+          <Bot aria-hidden="true" />
+          <h3>CareGrid Health AI</h3>
+          <p>Answers are scoped to digital health integration and project planning. It does not provide diagnosis, prescribing, or emergency clinical advice.</p>
+          <div className="aiModelNote">
+            <Cpu aria-hidden="true" />
+            <span>Ready for Ollama model <strong>gemma4</strong></span>
+          </div>
+        </aside>
+
+        <div className="aiChatPanel">
+          <div className="aiMessages" aria-live="polite">
+            {messages.map((message) => (
+              <article className={`aiMessage ${message.role}`} key={message.id}>
+                <div className="aiAvatar">{message.role === 'assistant' ? <Sparkles aria-hidden="true" /> : <User aria-hidden="true" />}</div>
+                <div>
+                  {message.meta && <span>{message.meta}</span>}
+                  <p>{message.content}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          <div className="aiPromptChips" aria-label="Example prompts">
+            {prompts.map((prompt) => (
+              <button type="button" key={prompt} onClick={() => setInput(prompt)}>{prompt}</button>
+            ))}
+          </div>
+
+          <form className="form aiForm" onSubmit={submit}>
+            <div className="formField">
+              <label htmlFor="ai-question"><MessageSquare aria-hidden="true" />Question</label>
+              <textarea id="ai-question" value={input} onChange={(e) => setInput(e.target.value)} rows={4} placeholder="Ask about interoperability, health checks, implementation planning, or integration risks." />
+            </div>
+            {status.message && <p className={`formStatus ${status.type}`} role="status">{status.message}</p>}
+            <button className="btn primary formSubmit" type="submit" disabled={loading}>
+              <Send aria-hidden="true" />
+              <span>{loading ? 'Thinking...' : 'Ask Consultant'}</span>
+            </button>
+          </form>
+        </div>
       </div>
     </section>
   );
@@ -710,6 +841,7 @@ function App() {
         <Home />
         <About />
         <Services />
+        <AiConsultant />
         <Training />
         <Experience />
         <Contact />
