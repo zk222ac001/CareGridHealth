@@ -372,15 +372,21 @@ app.post('/api/ai/chat', async (req, res) => {
     model = 'gpt-4o-mini';
   }
 
-  const session = await prisma.aiChatSession.create({ data: { visitorId: req.ip } });
-  await prisma.aiChatMessage.createMany({
-    data: [
-      { sessionId: session.id, role: 'user', message },
-      { sessionId: session.id, role: 'assistant', message: reply },
-    ],
-  });
+  let sessionId: string | null = null;
+  try {
+    const session = await prisma.aiChatSession.create({ data: { visitorId: req.ip } });
+    sessionId = session.id;
+    await prisma.aiChatMessage.createMany({
+      data: [
+        { sessionId: session.id, role: 'user', message },
+        { sessionId: session.id, role: 'assistant', message: reply },
+      ],
+    });
+  } catch (error) {
+    console.warn('AI chat responded, but chat history was not saved.', error);
+  }
 
-  res.json({ reply, sessionId: session.id, provider, model });
+  res.json({ reply, sessionId, provider, model });
 });
 
 async function getOllamaReply(system: string, message: string) {
