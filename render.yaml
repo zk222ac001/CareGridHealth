@@ -35,7 +35,7 @@ services:
       - key: MAIL_PORT
         value: "587"
       - key: MAIL_USER
-        sync: false
+        value: caregrid.health@gmail.com
       - key: MAIL_PASS
         sync: false
       - key: ADMIN_EMAIL
