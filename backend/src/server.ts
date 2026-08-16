@@ -8,7 +8,6 @@ import OpenAI from 'openai';
 import { PrismaClient } from '@prisma/client';
 import multer from 'multer';
 import crypto from 'node:crypto';
-import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -21,9 +20,6 @@ const app = express();
 const prisma = new PrismaClient();
 const port = Number(process.env.PORT || 4000);
 const contactRecipientEmail = 'caregrid.health@gmail.com';
-const uploadRoot = process.env.UPLOAD_ROOT ? path.resolve(process.env.UPLOAD_ROOT) : path.resolve(__dirname, '../uploads');
-const trainingUploadDir = path.join(uploadRoot, 'training-documents');
-const trainingDocumentsFile = path.join(trainingUploadDir, 'documents.json');
 const adminUsername = process.env.ADMIN_USERNAME || process.env.ADMIN_EMAIL || 'admin';
 const adminPassword = process.env.ADMIN_PASSWORD || '';
 const adminTokenSecret = process.env.ADMIN_SESSION_SECRET || adminPassword;
@@ -36,8 +32,8 @@ type TrainingDocument = {
   originalName: string;
   mimeType: string;
   size: number;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date | string;
+  updatedAt: Date | string;
 };
 
 type AdminTokenPayload = {
@@ -48,7 +44,6 @@ type AdminTokenPayload = {
 app.use(helmet());
 app.use(cors({ origin: process.env.FRONTEND_URL || '*' }));
 app.use(express.json({ limit: '1mb' }));
-app.use('/uploads/training-documents', express.static(trainingUploadDir));
 
 const contactSchema = z.object({
   name: z.string().min(2),
@@ -77,20 +72,7 @@ const documentMetadataSchema = z.object({
 });
 
 const upload = multer({
-  storage: multer.diskStorage({
-    async destination(_req, _file, cb) {
-      try {
-        await fs.mkdir(trainingUploadDir, { recursive: true });
-        cb(null, trainingUploadDir);
-      } catch (error) {
-        cb(error as Error, trainingUploadDir);
-      }
-    },
-    filename(_req, file, cb) {
-      const ext = path.extname(file.originalname).toLowerCase();
-      cb(null, `${Date.now()}-${crypto.randomUUID()}${ext}`);
-    },
-  }),
+  storage: multer.memoryStorage(),
   limits: { fileSize: 25 * 1024 * 1024 },
   fileFilter(_req, file, cb) {
     const allowedExts = new Set(['.pdf', '.ppt', '.pptx', '.doc', '.docx', '.xls', '.xlsx', '.csv', '.txt']);
@@ -129,6 +111,22 @@ app.get('/api/training-documents', async (_req, res, next) => {
   }
 });
 
+app.get('/api/training-documents/:id/download', async (req, res, next) => {
+  try {
+    const documentId = routeParam(req.params.id);
+    const document = await prisma.trainingDocument.findUnique({ where: { id: documentId } });
+    if (!document) return res.status(404).json({ error: 'Document not found.' });
+
+    const safeName = document.originalName.replace(/["\r\n]/g, '');
+    res.setHeader('Content-Type', document.mimeType || 'application/octet-stream');
+    res.setHeader('Content-Length', String(document.size));
+    res.setHeader('Content-Disposition', `inline; filename="${safeName}"`);
+    res.send(Buffer.from(document.content));
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.post('/api/admin/login', (req, res) => {
   const parsed = adminLoginSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'Username and password are required.' });
@@ -151,27 +149,21 @@ app.get('/api/admin/training-documents', requireAdmin, async (_req, res, next) =
 app.post('/api/admin/training-documents', requireAdmin, upload.single('file'), async (req, res, next) => {
   try {
     const parsed = documentMetadataSchema.safeParse(req.body);
-    if (!parsed.success) {
-      if (req.file) await fs.unlink(req.file.path).catch(() => undefined);
-      return res.status(400).json({ error: 'Please provide a document title.', details: parsed.error.flatten() });
-    }
+    if (!parsed.success) return res.status(400).json({ error: 'Please provide a document title.', details: parsed.error.flatten() });
     if (!req.file) return res.status(400).json({ error: 'Please choose a document to upload.' });
 
-    const now = new Date().toISOString();
-    const document: TrainingDocument = {
-      id: crypto.randomUUID(),
-      title: parsed.data.title,
-      description: parsed.data.description,
-      fileName: req.file.filename,
-      originalName: req.file.originalname,
-      mimeType: req.file.mimetype,
-      size: req.file.size,
-      createdAt: now,
-      updatedAt: now,
-    };
-    const documents = await readTrainingDocuments();
-    documents.unshift(document);
-    await writeTrainingDocuments(documents);
+    const ext = path.extname(req.file.originalname).toLowerCase();
+    const document = await prisma.trainingDocument.create({
+      data: {
+        title: parsed.data.title,
+        description: parsed.data.description,
+        fileName: `${Date.now()}-${crypto.randomUUID()}${ext}`,
+        originalName: req.file.originalname,
+        mimeType: req.file.mimetype,
+        size: req.file.size,
+        content: req.file.buffer,
+      },
+    });
     res.status(201).json({ document: toPublicDocument(document) });
   } catch (error) {
     next(error);
@@ -180,21 +172,21 @@ app.post('/api/admin/training-documents', requireAdmin, upload.single('file'), a
 
 app.patch('/api/admin/training-documents/:id', requireAdmin, async (req, res, next) => {
   try {
+    const documentId = routeParam(req.params.id);
     const parsed = documentMetadataSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: 'Please provide a document title.', details: parsed.error.flatten() });
 
-    const documents = await readTrainingDocuments();
-    const index = documents.findIndex((document) => document.id === req.params.id);
-    if (index === -1) return res.status(404).json({ error: 'Document not found.' });
+    const exists = await prisma.trainingDocument.findUnique({ where: { id: documentId }, select: { id: true } });
+    if (!exists) return res.status(404).json({ error: 'Document not found.' });
 
-    documents[index] = {
-      ...documents[index],
-      title: parsed.data.title,
-      description: parsed.data.description,
-      updatedAt: new Date().toISOString(),
-    };
-    await writeTrainingDocuments(documents);
-    res.json({ document: toPublicDocument(documents[index]) });
+    const document = await prisma.trainingDocument.update({
+      where: { id: documentId },
+      data: {
+        title: parsed.data.title,
+        description: parsed.data.description,
+      },
+    });
+    res.json({ document: toPublicDocument(document) });
   } catch (error) {
     next(error);
   }
@@ -202,27 +194,24 @@ app.patch('/api/admin/training-documents/:id', requireAdmin, async (req, res, ne
 
 app.put('/api/admin/training-documents/:id/file', requireAdmin, upload.single('file'), async (req, res, next) => {
   try {
+    const documentId = routeParam(req.params.id);
     if (!req.file) return res.status(400).json({ error: 'Please choose a replacement document.' });
 
-    const documents = await readTrainingDocuments();
-    const index = documents.findIndex((document) => document.id === req.params.id);
-    if (index === -1) {
-      await fs.unlink(req.file.path).catch(() => undefined);
-      return res.status(404).json({ error: 'Document not found.' });
-    }
+    const exists = await prisma.trainingDocument.findUnique({ where: { id: documentId }, select: { id: true } });
+    if (!exists) return res.status(404).json({ error: 'Document not found.' });
 
-    const oldFileName = documents[index].fileName;
-    documents[index] = {
-      ...documents[index],
-      fileName: req.file.filename,
-      originalName: req.file.originalname,
-      mimeType: req.file.mimetype,
-      size: req.file.size,
-      updatedAt: new Date().toISOString(),
-    };
-    await writeTrainingDocuments(documents);
-    await fs.unlink(path.join(trainingUploadDir, oldFileName)).catch(() => undefined);
-    res.json({ document: toPublicDocument(documents[index]) });
+    const ext = path.extname(req.file.originalname).toLowerCase();
+    const document = await prisma.trainingDocument.update({
+      where: { id: documentId },
+      data: {
+        fileName: `${Date.now()}-${crypto.randomUUID()}${ext}`,
+        originalName: req.file.originalname,
+        mimeType: req.file.mimetype,
+        size: req.file.size,
+        content: req.file.buffer,
+      },
+    });
+    res.json({ document: toPublicDocument(document) });
   } catch (error) {
     next(error);
   }
@@ -230,12 +219,11 @@ app.put('/api/admin/training-documents/:id/file', requireAdmin, upload.single('f
 
 app.delete('/api/admin/training-documents/:id', requireAdmin, async (req, res, next) => {
   try {
-    const documents = await readTrainingDocuments();
-    const document = documents.find((item) => item.id === req.params.id);
+    const documentId = routeParam(req.params.id);
+    const document = await prisma.trainingDocument.findUnique({ where: { id: documentId }, select: { id: true } });
     if (!document) return res.status(404).json({ error: 'Document not found.' });
 
-    await writeTrainingDocuments(documents.filter((item) => item.id !== req.params.id));
-    await fs.unlink(path.join(trainingUploadDir, document.fileName)).catch(() => undefined);
+    await prisma.trainingDocument.delete({ where: { id: documentId } });
     res.status(204).send();
   } catch (error) {
     next(error);
@@ -300,26 +288,33 @@ function requireAdmin(req: express.Request, res: express.Response, next: express
   next();
 }
 
-async function readTrainingDocuments(): Promise<TrainingDocument[]> {
-  try {
-    const content = await fs.readFile(trainingDocumentsFile, 'utf8');
-    return JSON.parse(content) as TrainingDocument[];
-  } catch (error) {
-    const code = (error as NodeJS.ErrnoException).code;
-    if (code === 'ENOENT') return [];
-    throw error;
-  }
+function routeParam(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value || '';
 }
 
-async function writeTrainingDocuments(documents: TrainingDocument[]) {
-  await fs.mkdir(trainingUploadDir, { recursive: true });
-  await fs.writeFile(trainingDocumentsFile, JSON.stringify(documents, null, 2));
+async function readTrainingDocuments(): Promise<TrainingDocument[]> {
+  return prisma.trainingDocument.findMany({
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      fileName: true,
+      originalName: true,
+      mimeType: true,
+      size: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
 }
 
 function toPublicDocument(document: TrainingDocument) {
   return {
     ...document,
-    url: `/uploads/training-documents/${document.fileName}`,
+    createdAt: document.createdAt instanceof Date ? document.createdAt.toISOString() : document.createdAt,
+    updatedAt: document.updatedAt instanceof Date ? document.updatedAt.toISOString() : document.updatedAt,
+    url: `/api/training-documents/${document.id}/download`,
   };
 }
 
