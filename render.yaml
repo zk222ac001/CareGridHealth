@@ -36,8 +36,6 @@ services:
         value: "587"
       - key: MAIL_USER
         value: caregrid.health@gmail.com
-      - key: MAIL_PASS
-        sync: false
       - key: ADMIN_EMAIL
         value: caregrid.health@gmail.com
 

@@ -622,7 +622,14 @@ function Contact() {
         body: JSON.stringify({ ...body, email: body.email || undefined }),
       });
       const data = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(data?.error || 'Submission failed. Please try again.');
+      if (!res.ok) {
+        if (res.status === 502 || res.status === 503) {
+          openPreparedContactEmail(body);
+          setStatus({ type: 'success', message: 'Your email app has been opened with a prepared message. Please press send to complete.' });
+          return;
+        }
+        throw new Error(data?.error || 'Submission failed. Please try again.');
+      }
       setStatus({ type: 'success', message: 'Your message has been sent. Thank you.' });
       formElement.reset();
     } catch (error) {
