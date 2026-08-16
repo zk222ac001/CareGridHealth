@@ -1,0 +1,49 @@
+services:
+  - type: web
+    name: caregrid-health-api
+    runtime: node
+    plan: starter
+    region: singapore
+    rootDir: backend
+    buildCommand: npm ci && npx prisma generate && npm run build
+    startCommand: npx prisma db push && npm start
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    disk:
+      name: caregrid-health-uploads
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: FRONTEND_URL
+        value: https://caregridhealth.com.au
+      - key: UPLOAD_ROOT
+        value: /var/data/uploads
+      - key: DATABASE_URL
+        fromDatabase:
+          name: caregrid-health-db
+          property: connectionString
+      - key: ADMIN_USERNAME
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: ADMIN_SESSION_SECRET
+        generateValue: true
+      - key: MAIL_HOST
+        value: smtp.gmail.com
+      - key: MAIL_PORT
+        value: "587"
+      - key: MAIL_USER
+        sync: false
+      - key: MAIL_PASS
+        sync: false
+      - key: ADMIN_EMAIL
+        value: caregrid.health@gmail.com
+
+databases:
+  - name: caregrid-health-db
+    plan: basic-256mb
+    region: singapore
+    databaseName: caregrid_health
+    user: caregrid_health
