@@ -26,6 +26,8 @@ services:
         generateValue: true
       - key: OLLAMA_MODEL
         value: gemma4
+      - key: OLLAMA_FALLBACK_MODEL
+        value: llama3.2
       - key: MAIL_HOST
         value: smtp.gmail.com
       - key: MAIL_PORT

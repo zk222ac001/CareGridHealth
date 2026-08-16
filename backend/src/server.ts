@@ -25,6 +25,7 @@ const adminPassword = process.env.ADMIN_PASSWORD || '';
 const adminTokenSecret = process.env.ADMIN_SESSION_SECRET || adminPassword;
 const ollamaHost = (process.env.OLLAMA_HOST || process.env.OLLAMA_BASE_URL || '').replace(/\/$/, '');
 const ollamaModel = process.env.OLLAMA_MODEL || 'gemma4';
+const ollamaFallbackModel = process.env.OLLAMA_FALLBACK_MODEL || 'llama3.2';
 const configuredOllamaTimeoutMs = Number(process.env.OLLAMA_TIMEOUT_MS || 60000);
 const ollamaTimeoutMs = Number.isFinite(configuredOllamaTimeoutMs) && configuredOllamaTimeoutMs > 0 ? configuredOllamaTimeoutMs : 60000;
 
@@ -351,9 +352,10 @@ app.post('/api/ai/chat', async (req, res) => {
 
   if (ollamaHost) {
     try {
-      reply = await getOllamaReply(system, message);
+      const ollamaReply = await getOllamaReply(system, message);
+      reply = ollamaReply.reply;
       provider = 'ollama';
-      model = ollamaModel;
+      model = ollamaReply.model;
     } catch (error) {
       console.error('Ollama chat failed.', error);
       return res.status(503).json({ error: 'AI Consultant is not reachable right now. Please check the Ollama host and model configuration.' });
@@ -382,6 +384,20 @@ app.post('/api/ai/chat', async (req, res) => {
 });
 
 async function getOllamaReply(system: string, message: string) {
+  const models = Array.from(new Set([ollamaModel, ollamaFallbackModel].filter(Boolean)));
+  let lastError: unknown;
+  for (const model of models) {
+    try {
+      return { reply: await askOllamaModel(model, system, message), model };
+    } catch (error) {
+      lastError = error;
+      console.warn(`Ollama model ${model} failed.`, error);
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error('No Ollama model responded.');
+}
+
+async function askOllamaModel(model: string, system: string, message: string) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), ollamaTimeoutMs);
   try {
@@ -389,7 +405,7 @@ async function getOllamaReply(system: string, message: string) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify({
-        model: ollamaModel,
+        model,
         messages: [
           { role: 'system', content: system },
           { role: 'user', content: message },

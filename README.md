@@ -28,4 +28,4 @@ npx prisma generate
 ## Environment Variables
 See `backend/.env.example`.
 
-For the AI Consultant, set `OLLAMA_HOST` to your Ollama API host, such as `http://localhost:11434`, and `OLLAMA_MODEL` to the installed model name. The default model is `gemma4`.
+For the AI Consultant, set `OLLAMA_HOST` to your Ollama API host, such as `http://localhost:11434`, and `OLLAMA_MODEL` to the installed model name. The default model is `gemma4`, with `llama3.2` as a fallback.
